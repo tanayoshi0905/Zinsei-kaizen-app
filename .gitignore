@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+._*
+
+# Env
+.env
+.env.*
+.env.local
+.env.*.local
+
+# Node/JS (念のため)
+node_modules/
+dist/
+build/
+.cache/
+.parcel-cache/
+coverage/
+
+# Editors
+.idea/
+.vscode/
+
+# Framework outputs (多めにカバー)
+.next/
+out/
+.turbo/
+

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>理想アドバイザー</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <div class="line-strip"></div>
+      <div class="brand-text">
+        <div class="brand-title"><span id="lineLabel">学習線</span> 運行情報ポータル</div>
+        <div class="brand-sub">ダイヤアドバイザー | 遅延・運休・振替のご案内（擬似）</div>
+      </div>
+      <div class="brand-clock" id="nowClock">--:--</div>
+    </div>
+    <nav class="nav">
+      <a href="#results">運行情報</a>
+      <a href="#certificate">遅延証明（擬似）</a>
+      <a href="#notices">お知らせ</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="input-section">
+      <label for="context">今の状況や目標、課題を自由に書いてください</label>
+      <textarea id="context" rows="10" placeholder="例: 毎日英語を勉強したいが、仕事で疲れて続かない。週に3回は30分勉強したい。TOEICを6ヶ月で700点に上げたい。朝早起きは苦手。"></textarea>
+
+      <div class="options">
+        <label>
+          カテゴリ（任意）
+          <select id="category">
+            <option value="auto">自動判定</option>
+            <option value="health">健康</option>
+            <option value="study">学習</option>
+            <option value="work">仕事</option>
+            <option value="finance">金銭</option>
+            <option value="relationship">人間関係</option>
+            <option value="habit">習慣</option>
+            <option value="other">その他</option>
+          </select>
+        </label>
+
+        <label class="toggle">
+          <input type="checkbox" id="useApi" />
+          <span>APIを使う（任意・OpenAI互換）</span>
+        </label>
+        <input id="apiKey" type="password" placeholder="API Key (任意)" disabled />
+        <input id="apiBase" type="text" placeholder="API Base URL (任意)" disabled />
+        <input id="apiModel" type="text" placeholder="Model (例: gpt-4o-mini)" disabled />
+        <label>
+          APIモード（有効時）
+          <select id="apiMode" disabled>
+            <option value="assist">補足提案のみ（ローカル＋API補強）</option>
+            <option value="full">全評価をAPIに任せる</option>
+          </select>
+        </label>
+        <label>
+          テーマ
+          <select id="themeSelect">
+            <option value="jr">JRグリーン</option>
+            <option value="metro">メトロブルー</option>
+            <option value="private">私鉄オレンジ</option>
+          </select>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="enableSE" checked />
+          <span>SEを鳴らす</span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="analyzeBtn">分析する</button>
+        <button id="clearBtn" class="secondary">クリア</button>
+        <button id="loadLastBtn" class="secondary">前回の結果を読み込む</button>
+      </div>
+    </section>
+
+    <section id="results" class="hidden">
+      <h2>分析結果</h2>
+      <div class="board" aria-live="polite">
+        <div class="board-title">運行情報</div>
+        <div id="delayStatus" class="board-line marquee">現在、評価を計算中です…</div>
+      </div>
+      <div class="score">
+        <div class="score-number" id="scoreNumber">0分</div>
+        <div class="score-bar" title="オンタイム率"><div id="scoreBar"></div></div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h3>理想ダイヤ</h3>
+          <div id="ideal"></div>
+        </div>
+        <div class="card">
+          <h3>遅延要因</h3>
+          <ul id="gaps" class="list"></ul>
+        </div>
+        <div class="card">
+          <h3>遅延短縮プラン（次の2週間）</h3>
+          <ol id="actions" class="list"></ol>
+        </div>
+        <div class="card">
+          <h3>遅延内訳</h3>
+          <ul id="breakdown" class="list compact"></ul>
+        </div>
+      </div>
+
+      <details>
+        <summary>生成に使ったメモ</summary>
+        <pre id="debug"></pre>
+      </details>
+    </section>
+
+    <section id="certificate" class="hidden">
+      <h2>遅延証明（擬似）</h2>
+      <div class="certificate">
+        <div class="cert-header">遅延証明書（擬似）</div>
+        <div class="cert-body" id="certificateText">現在準備中です。</div>
+        <div class="cert-footer">
+          <button id="copyCertBtn">内容をコピー</button>
+          <button id="printBtn" class="secondary">印刷</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="notices">
+      <h2>お知らせ</h2>
+      <ul class="notice-list">
+        <li>本ページは学習・自己管理のための擬似「運行情報」UIです。実際の鉄道情報ではありません。</li>
+        <li>API利用時は入力内容が送信されます。機密情報は避けてください。</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <small>このアプリはオフラインで動作します。API設定時は外部通信を行います。</small>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    // 初期化（APIフィールドの有効/無効）
+    const useApi = document.getElementById('useApi');
+    const apiKey = document.getElementById('apiKey');
+    const apiBase = document.getElementById('apiBase');
+    const apiModel = document.getElementById('apiModel');
+    const apiMode = document.getElementById('apiMode');
+    const themeSelect = document.getElementById('themeSelect');
+    const enableSE = document.getElementById('enableSE');
+    const toggle = (on) => {
+      [apiKey, apiBase, apiModel, apiMode].forEach(el => el.disabled = !on);
+    };
+    useApi.addEventListener('change', () => toggle(useApi.checked));
+    // 既定のAPI設定（OpenAI）
+    const DEFAULT_API = {
+      base: 'https://api.openai.com',
+      model: 'gpt-4o-mini'
+    };
+    apiBase.value = DEFAULT_API.base;
+    apiModel.value = DEFAULT_API.model;
+    apiKey.value = '';
+    useApi.checked = true;
+    toggle(true);
+    // 既定で全評価をAPIに任せる
+    if (apiMode) apiMode.value = 'full';
+
+    // 初期テーマ
+    document.body.dataset.theme = themeSelect.value;
+    themeSelect.addEventListener('change', () => {
+      document.body.dataset.theme = themeSelect.value;
+    });
+
+    // 時計（簡易）
+    const updClock = () => {
+      const d = new Date();
+      const hh = String(d.getHours()).padStart(2,'0');
+      const mm = String(d.getMinutes()).padStart(2,'0');
+      document.getElementById('nowClock').textContent = `${hh}:${mm}`;
+    };
+    updClock(); setInterval(updClock, 20000);
+  </script>
+</body>
+</html>
